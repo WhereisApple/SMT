@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register - Society Maintenance Tracker</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <header>
+        <h1>🏢 Society Maintenance Tracker</h1>
+    </header>
+
+    <div class="container">
+        <div class="register-wrapper">
+            <form class="auth-form" onsubmit="handleRegister(event)">
+                <h2>Create Account</h2>
+                <p class="auth-subtitle">Register as a resident</p>
+
+                <div class="form-group">
+                    <label for="reg-name">Full Name</label>
+                    <input type="text" id="reg-name" required placeholder="John Doe" />
+                    <small class="form-help">Your full name for identification</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-email">Email Address</label>
+                    <input type="email" id="reg-email" required placeholder="your@email.com" />
+                    <small class="form-help">Use a valid email address for login and notifications</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-flat">Flat/Unit Number</label>
+                    <input type="text" id="reg-flat" placeholder="e.g., A-101 or 3B" />
+                    <small class="form-help">Your flat/unit number in the society</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-phone">Phone Number</label>
+                    <input type="tel" id="reg-phone" placeholder="9876543210" />
+                    <small class="form-help">For emergency contact and notifications</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" required placeholder="••••••••" />
+                    <small class="form-help">
+                        Minimum 8 characters with 1 uppercase letter and 1 digit (e.g., Password123)
+                    </small>
+                </div>
+
+                <div class="password-requirements">
+                    <p>Password requirements:</p>
+                    <ul>
+                        <li id="req-length"><span class="req-icon">○</span> Minimum 8 characters</li>
+                        <li id="req-upper"><span class="req-icon">○</span> At least 1 uppercase letter</li>
+                        <li id="req-digit"><span class="req-icon">○</span> At least 1 digit</li>
+                    </ul>
+                </div>
+
+                <div id="register-error" class="error-message" style="display: none;"></div>
+
+                <div class="auth-buttons">
+                    <button type="submit" class="btn-primary">Create Account</button>
+                </div>
+
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="login.html"
+                            style="color: #667eea; text-decoration: none; font-weight: bold;">Sign in here</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        window.addEventListener('load', function () {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                window.location.href = 'resident.html';
+            }
+        });
+
+        const passwordInput = document.getElementById('reg-password');
+        passwordInput.addEventListener('input', function () {
+            const password = this.value;
+
+            const lengthValid = password.length >= 8;
+            updateRequirement('req-length', lengthValid);
+
+            const upperValid = /[A-Z]/.test(password);
+            updateRequirement('req-upper', upperValid);
+
+            const digitValid = /[0-9]/.test(password);
+            updateRequirement('req-digit', digitValid);
+        });
+
+        function updateRequirement(id, isValid) {
+            const elem = document.getElementById(id);
+            if (isValid) {
+                elem.classList.add('requirement-met');
+                elem.querySelector('.req-icon').textContent = '✓';
+            } else {
+                elem.classList.remove('requirement-met');
+                elem.querySelector('.req-icon').textContent = '○';
+            }
+        }
+    </script>
+</body>
+
+</html>

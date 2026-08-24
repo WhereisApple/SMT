@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notices - Society Maintenance Tracker</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <header>
+        <h1>🏢 Society Maintenance Tracker</h1>
+        <div class="header-right">
+            <div class="user-info" id="user-info">
+                <span id="user-name"></span> (<span id="user-role"></span>)
+            </div>
+            <button onclick="handleLogout()" class="btn-logout">Logout</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="back-link">
+            <a href="resident.html" onclick="window.history.back(); return false;">← Back to Dashboard</a>
+        </div>
+
+        <div class="notices-page">
+            <div class="section-header">
+                <h2>📢 Notice Board</h2>
+                <p class="section-subtitle">Stay updated with society announcements</p>
+            </div>
+
+            <div id="notices-filter" class="filter-bar">
+                <button class="filter-btn active" onclick="filterNotices('all')">All Notices</button>
+                <button class="filter-btn" onclick="filterNotices('important')">⭐ Important</button>
+            </div>
+
+            <div id="notices-container" class="notices-full-grid">
+                <p class="loading">Loading notices...</p>
+            </div>
+        </div>
+
+        <div id="admin-notices-section" style="display:none" class="admin-section">
+            <hr style="margin: 40px 0;">
+            <h2>📝 Manage Notices (Admin Only)</h2>
+
+            <form class="notice-form-full" onsubmit="handleCreateNoticeDetail(event)">
+                <div class="form-group">
+                    <label for="notice-title-detail">Notice Title *</label>
+                    <input type="text" id="notice-title-detail" required
+                        placeholder="e.g., Water Supply Maintenance..." />
+                </div>
+
+                <div class="form-group">
+                    <label for="notice-content-detail">Notice Content *</label>
+                    <textarea id="notice-content-detail" required placeholder="Enter detailed notice information..."
+                        rows="6"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="notice-important-detail" />
+                        <span>Mark as Important</span>
+                        <small>Checking this will send email notifications to all residents</small>
+                    </label>
+                </div>
+
+                <div id="notice-error" class="error-message" style="display:none;"></div>
+                <div id="notice-success" class="success-message" style="display:none;"></div>
+
+                <button type="submit" class="btn-primary">Post Notice</button>
+            </form>
+
+            <div class="admin-notices-management">
+                <h3>All Posted Notices</h3>
+                <div id="admin-notices-container" class="admin-notices-list">
+                    <p class="loading">Loading notices...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notice-detail-modal" class="modal" style="display:none">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="modal-notice-title">Notice Details</h2>
+                <button type="button" class="close-modal" onclick="closeNoticeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-notice-content"></div>
+                <div id="modal-notice-meta" class="notice-meta"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-notice-modal" class="modal" style="display:none">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Notice</h2>
+                <button type="button" class="close-modal" onclick="closeEditNoticeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="submitEditNotice(event)">
+                    <div class="form-group">
+                        <label for="edit-notice-title">Title *</label>
+                        <input type="text" id="edit-notice-title" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-notice-content">Content *</label>
+                        <textarea id="edit-notice-content" required rows="5"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="edit-notice-important" />
+                            <span>Mark as Important</span>
+                        </label>
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="submit" class="btn-primary">Save Changes</button>
+                        <button type="button" onclick="closeEditNoticeModal()" class="btn-secondary">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let currentNoticeId = null;
+        let allNotices = [];
+        let currentFilter = 'all';
+
+        window.addEventListener('load', function () {
+            const token = localStorage.getItem('authToken');
+            const currentUser = localStorage.getItem('currentUser');
+
+            if (!token || !currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const user = JSON.parse(currentUser);
+            document.getElementById('user-name').textContent = user.email || 'User';
+            document.getElementById('user-role').textContent = user.role || 'resident';
+
+            if (user.role === 'admin') {
+                document.getElementById('admin-notices-section').style.display = 'block';
+                loadAdminNotices();
+            }
+
+            loadPublicNotices();
+        });
+
+        async function loadPublicNotices() {
+            try {
+                const response = await apiCall('/api/notices/', 'GET');
+                allNotices = response;
+                displayNotices(allNotices);
+            } catch (error) {
+                console.error('Error loading notices:', error);
+                document.getElementById('notices-container').innerHTML = '<p class="error">Error loading notices</p>';
+            }
+        }
+
+        async function loadAdminNotices() {
+            try {
+                const response = await apiCall('/api/notices/', 'GET');
+                displayAdminNotices(response);
+            } catch (error) {
+                console.error('Error loading admin notices:', error);
+                document.getElementById('admin-notices-container').innerHTML = '<p class="error">Error loading notices</p>';
+            }
+        }
+
+        function displayNotices(notices) {
+            if (notices.length === 0) {
+                document.getElementById('notices-container').innerHTML = '<p class="no-data">No notices available</p>';
+                return;
+            }
+
+            const html = notices.map(notice => `
+                <div class="notice-card ${notice.is_important ? 'important' : ''}">
+                    ${notice.is_important ? '<div class="important-badge">⭐ IMPORTANT</div>' : ''}
+                    <div class="notice-header">
+                        <h3>${notice.title}</h3>
+                        <div class="notice-date">${new Date(notice.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div class="notice-body">
+                        <p>${notice.content.substring(0, 200)}${notice.content.length > 200 ? '...' : ''}</p>
+                    </div>
+                    <div class="notice-footer">
+                        <button class="btn-secondary" onclick="viewNotice(${notice.id}, '${notice.title.replace(/'/g, "\\'")}', '${notice.content.replace(/'/g, "\\'")}')" style="width: 100%;">
+                            Read More
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('notices-container').innerHTML = html;
+        }
+
+        function displayAdminNotices(notices) {
+            if (notices.length === 0) {
+                document.getElementById('admin-notices-container').innerHTML = '<p class="no-data">No notices posted yet</p>';
+                return;
+            }
+
+            const html = notices.map(notice => `
+                <div class="admin-notice-item">
+                    <div class="admin-notice-info">
+                        <h4>${notice.title}${notice.is_important ? ' <span class="badge">IMPORTANT</span>' : ''}</h4>
+                        <p>${notice.content.substring(0, 100)}...</p>
+                        <small>${new Date(notice.created_at).toLocaleDateString()}</small>
+                    </div>
+                    <div class="admin-notice-actions">
+                        <button class="btn-secondary" onclick="editNotice(${notice.id}, '${notice.title.replace(/'/g, "\\'")}', '${notice.content.replace(/'/g, "\\'")}', ${notice.is_important})">Edit</button>
+                        <button class="btn-danger" onclick="deleteNotice(${notice.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('admin-notices-container').innerHTML = html;
+        }
+
+        function filterNotices(filter) {
+            currentFilter = filter;
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            if (filter === 'important') {
+                displayNotices(allNotices.filter(n => n.is_important));
+            } else {
+                displayNotices(allNotices);
+            }
+        }
+
+        function viewNotice(id, title, content) {
+            document.getElementById('modal-notice-title').textContent = title;
+            document.getElementById('modal-notice-content').textContent = content;
+            document.getElementById('notice-detail-modal').style.display = 'flex';
+        }
+
+        function closeNoticeModal() {
+            document.getElementById('notice-detail-modal').style.display = 'none';
+        }
+
+        async function handleCreateNoticeDetail(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('notice-title-detail').value;
+            const content = document.getElementById('notice-content-detail').value;
+            const isImportant = document.getElementById('notice-important-detail').checked;
+
+            try {
+                await apiCall('/api/notices/', 'POST', {
+                    title,
+                    content,
+                    is_important: isImportant
+                });
+
+                document.getElementById('notice-success').textContent = 'Notice posted successfully!';
+                document.getElementById('notice-success').style.display = 'block';
+
+                setTimeout(() => {
+                    document.getElementById('notice-success').style.display = 'none';
+                }, 3000);
+
+                event.target.reset();
+                loadPublicNotices();
+                loadAdminNotices();
+            } catch (error) {
+                document.getElementById('notice-error').textContent = 'Error posting notice: ' + error.message;
+                document.getElementById('notice-error').style.display = 'block';
+            }
+        }
+
+        function editNotice(id, title, content, isImportant) {
+            currentNoticeId = id;
+            document.getElementById('edit-notice-title').value = title;
+            document.getElementById('edit-notice-content').value = content;
+            document.getElementById('edit-notice-important').checked = isImportant;
+            document.getElementById('edit-notice-modal').style.display = 'flex';
+        }
+
+        function closeEditNoticeModal() {
+            document.getElementById('edit-notice-modal').style.display = 'none';
+        }
+
+        async function submitEditNotice(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('edit-notice-title').value;
+            const content = document.getElementById('edit-notice-content').value;
+            const isImportant = document.getElementById('edit-notice-important').checked;
+
+            try {
+                await apiCall(`/api/notices/${currentNoticeId}`, 'PUT', {
+                    title,
+                    content,
+                    is_important: isImportant
+                });
+
+                alert('Notice updated successfully!');
+                closeEditNoticeModal();
+                loadPublicNotices();
+                loadAdminNotices();
+            } catch (error) {
+                alert('Error updating notice: ' + error.message);
+            }
+        }
+
+        async function deleteNotice(id) {
+            if (confirm('Are you sure you want to delete this notice?')) {
+                try {
+                    await apiCall(`/api/notices/${id}`, 'DELETE');
+                    alert('Notice deleted successfully!');
+                    loadPublicNotices();
+                    loadAdminNotices();
+                } catch (error) {
+                    alert('Error deleting notice: ' + error.message);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

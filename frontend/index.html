@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Society Maintenance Tracker</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <header>
+        <h1>🏢 Society Maintenance Tracker</h1>
+        <div class="header-right">
+            <div class="user-info" id="user-info" style="display: none">
+                <span id="user-name"></span> (<span id="user-role"></span>)
+            </div>
+            <button onclick="handleLogout()" id="logout-btn" style="display: none">
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="login" data-page="login">
+            <form class="auth-form" onsubmit="handleLogin(event)">
+                <h2>Login</h2>
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" required placeholder="your@email.com" />
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" required placeholder="Password123" />
+                </div>
+                <div class="auth-buttons">
+                    <button type="submit">Login</button>
+                    <button type="button" onclick="showPage('register')" style="background: #95a5a6">
+                        Register
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="register" data-page="register">
+            <form class="auth-form" onsubmit="handleRegister(event)">
+                <h2>Register as Resident</h2>
+                <div class="form-group">
+                    <label for="reg-name">Full Name</label>
+                    <input type="text" id="reg-name" required placeholder="John Doe" />
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">Email</label>
+                    <input type="email" id="reg-email" required placeholder="your@email.com" />
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" required
+                        placeholder="Password123 (min 8 chars, 1 uppercase, 1 digit)" />
+                </div>
+                <div class="form-group">
+                    <label for="reg-flat">Flat Number</label>
+                    <input type="text" id="reg-flat" placeholder="A-101" />
+                </div>
+                <div class="form-group">
+                    <label for="reg-phone">Phone</label>
+                    <input type="tel" id="reg-phone" placeholder="9876543210" />
+                </div>
+                <div class="auth-buttons">
+                    <button type="submit">Register</button>
+                    <button type="button" onclick="showPage('login')" style="background: #95a5a6">
+                        Back to Login
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="resident-home" data-page="resident-home" class="resident-page">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('resident', 'complaints')">
+                    My Complaints
+                </button>
+                <button class="nav-tab" onclick="showTab('resident', 'new-complaint')">
+                    New Complaint
+                </button>
+                <button class="nav-tab" onclick="showTab('resident', 'notices')">
+                    Notice Board
+                </button>
+            </div>
+
+            <div id="resident-complaints-tab" class="tab-content">
+                <div id="resident-complaints"></div>
+            </div>
+
+            <div id="resident-new-complaint-tab" class="tab-content" style="display: none">
+                <form id="complaint-form" onsubmit="handleCreateComplaint(event)">
+                    <h3>Create a New Complaint</h3>
+                    <div class="form-group">
+                        <label for="complaint-category">Category</label>
+                        <select id="complaint-category" required>
+                            <option value="">Select a category</option>
+                            <option value="plumbing">Plumbing</option>
+                            <option value="electrical">Electrical</option>
+                            <option value="structural">Structural</option>
+                            <option value="cleanliness">Cleanliness</option>
+                            <option value="noise">Noise</option>
+                            <option value="parking">Parking</option>
+                            <option value="common_area">Common Area</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="complaint-description">Description</label>
+                        <textarea id="complaint-description" required
+                            placeholder="Describe the issue in detail..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="complaint-photo">Photo (Optional)</label>
+                        <input type="file" id="complaint-photo" accept="image/*" />
+                    </div>
+                    <button type="submit">Submit Complaint</button>
+                </form>
+            </div>
+
+            <div id="resident-notices-tab" class="tab-content" style="display: none">
+                <h3>Notice Board</h3>
+                <div id="notice-board"></div>
+            </div>
+        </div>
+
+        <div id="admin-dashboard" data-page="admin-dashboard" class="admin-page">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('admin', 'dashboard')">
+                    Dashboard
+                </button>
+                <button class="nav-tab" onclick="showTab('admin', 'complaints')">
+                    All Complaints
+                </button>
+                <button class="nav-tab" onclick="showTab('admin', 'notices')">
+                    Manage Notices
+                </button>
+            </div>
+
+            <div id="admin-dashboard-tab" class="tab-content">
+                <div id="admin-dashboard-stats"></div>
+                <h3>Complaints by Category</h3>
+                <div id="category-breakdown"></div>
+            </div>
+
+            <div id="admin-complaints-tab" class="tab-content" style="display: none">
+                <div class="filter-section">
+                    <select id="filter-category">
+                        <option value="">All Categories</option>
+                        <option value="plumbing">Plumbing</option>
+                        <option value="electrical">Electrical</option>
+                        <option value="structural">Structural</option>
+                        <option value="cleanliness">Cleanliness</option>
+                        <option value="noise">Noise</option>
+                        <option value="parking">Parking</option>
+                        <option value="common_area">Common Area</option>
+                    </select>
+                    <select id="filter-status">
+                        <option value="">All Status</option>
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                    </select>
+                    <select id="filter-priority">
+                        <option value="">All Priorities</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                    <button onclick="loadAllComplaints()">Filter</button>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Complaint ID</th>
+                            <th>Category</th>
+                            <th>Resident</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Alert</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-complaints-list"></tbody>
+                </table>
+
+                <div id="complaint-details"></div>
+
+                <div class="update-form">
+                    <h3>Update Complaint</h3>
+                    <input type="hidden" id="selected-complaint-id" />
+                    <form onsubmit="handleUpdateComplaint(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="complaint-update-status">Status</label>
+                                <select id="complaint-update-status" required>
+                                    <option value="open">Open</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="complaint-update-priority">Priority</label>
+                                <select id="complaint-update-priority" required>
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="complaint-update-note">Note (Optional)</label>
+                            <textarea id="complaint-update-note"
+                                placeholder="Add a note about this update..."></textarea>
+                        </div>
+                        <button type="submit">Update Complaint</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="admin-notices-tab" class="tab-content" style="display: none">
+                <form id="notice-form" onsubmit="handleCreateNotice(event)">
+                    <h3>Create New Notice</h3>
+                    <div class="form-group">
+                        <label for="notice-title">Title</label>
+                        <input type="text" id="notice-title" required placeholder="Notice title..." />
+                    </div>
+                    <div class="form-group">
+                        <label for="notice-content">Content</label>
+                        <textarea id="notice-content" required placeholder="Notice content..."></textarea>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="notice-important" />
+                        <label for="notice-important" style="margin: 0">
+                            Mark as Important
+                        </label>
+                    </div>
+                    <button type="submit">Post Notice</button>
+                </form>
+
+                <h3>All Notices</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Important</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-notices-list"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="complaint-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Complaint Details</h2>
+                <span class="close" onclick="closeModal('complaint-details-modal')">&times;</span>
+            </div>
+            <div id="complaint-details-content"></div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(role, tab) {
+            const prefix = role === "admin" ? "admin" : "resident";
+            document.querySelectorAll(`#${prefix}-home [class*="-tab"]`).forEach((t) => {
+                t.style.display = "none";
+            });
+            document
+                .querySelectorAll(`.nav-tab`)
+                .forEach((btn) => btn.classList.remove("active"));
+            document.getElementById(`${prefix}-${tab}-tab`).style.display = "block";
+            event.target.classList.add("active");
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            if (authToken && currentUser) {
+                document.getElementById("user-info").style.display = "block";
+                document.getElementById("user-name").textContent = currentUser.name;
+                document.getElementById("user-role").textContent = currentUser.role;
+                document.getElementById("logout-btn").style.display = "block";
+                showPage(currentUser.role === "admin" ? "admin-dashboard" : "resident-home");
+            } else {
+                showPage("login");
+            }
+        });
+    </script>
+    <script src="app.js"></script>
+</body>
+
+</html>

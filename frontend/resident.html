@@ -1,0 +1,167 @@
+<!-- filepath: /home/sumeet725/Desktop/Hershey/Random projects/SMT/frontend/resident.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SMT</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <div class="nav-brand">SMT - Maintenance Tracker</div>
+            <div class="nav-menu">
+                <span id="userDisplay">Welcome!</span>
+                <button onclick="logout()" class="btn btn-secondary">Logout</button>
+            </div>
+        </nav>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('complaints')">Complaints</button>
+            <button class="tab-button" onclick="switchTab('notices')">Notices</button>
+            <button class="tab-button" id="adminTabBtn" style="display:none;"
+                onclick="switchTab('admin')">Admin</button>
+        </div>
+
+        <!-- Complaints Tab -->
+        <div id="complaintsTab" class="tab-content active">
+            <div class="section">
+                <h2>Raise a New Complaint</h2>
+                <form id="complaintForm">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="complaintCategory" required>
+                            <option value="">Select Category</option>
+                            <option value="Plumbing">Plumbing</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Cleanliness">Cleanliness</option>
+                            <option value="Security">Security</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="complaintDescription" placeholder="Describe the issue..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Photo (Optional)</label>
+                        <input type="file" id="complaintPhoto" accept="image/*">
+                    </div>
+                    <button type="button" onclick="createComplaint()" class="btn btn-primary">Submit Complaint</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h2>Your Complaints</h2>
+                <div id="complaintsContainer" class="complaints-grid">
+                    <p>Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notices Tab -->
+        <div id="noticesTab" class="tab-content">
+            <div id="adminNoticesForm" style="display:none;" class="section">
+                <h2>Post a Notice</h2>
+                <form id="noticeForm">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="noticeTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Content</label>
+                        <textarea id="noticeContent" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="noticePinned">
+                            Pin to Top (Important)
+                        </label>
+                    </div>
+                    <button type="button" onclick="createNotice()" class="btn btn-primary">Post Notice</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h2>Notice Board</h2>
+                <div id="noticesContainer" class="notices-grid">
+                    <p>Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Tab -->
+        <div id="adminTab" class="tab-content">
+            <div class="section">
+                <h2>Dashboard</h2>
+                <div id="dashboardStats" class="stats-grid">
+                    <p>Loading...</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>All Complaints</h2>
+                <div id="adminComplaintsContainer" class="complaints-grid">
+                    <p>Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let currentUser = null;
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+
+            // Load tab data
+            if (tabName === 'complaints') {
+                loadComplaints();
+            } else if (tabName === 'notices') {
+                loadNotices();
+            } else if (tabName === 'admin') {
+                loadDashboard();
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const userStr = localStorage.getItem('user');
+
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            currentUser = JSON.parse(userStr);
+            document.getElementById('userDisplay').textContent = `Welcome, ${currentUser.name}!`;
+
+            // Show admin tab if user is admin
+            if (currentUser.role === 'admin') {
+                document.getElementById('adminTabBtn').style.display = 'inline-block';
+                document.getElementById('adminNoticesForm').style.display = 'block';
+            }
+
+            loadComplaints();
+            loadNotices();
+        });
+    </script>
+</body>
+
+</html>
